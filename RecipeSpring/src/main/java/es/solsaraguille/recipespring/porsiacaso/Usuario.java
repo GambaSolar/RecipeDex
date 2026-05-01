@@ -1,4 +1,4 @@
-package es.solsaraguille.recipespring.entities;
+package es.solsaraguille.recipespring.porsiacaso;
 
 
 import jakarta.persistence.*;
