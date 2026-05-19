@@ -1,6 +1,5 @@
 package es.solsaraguille.recipespring.controllers;
 
-
 import es.solsaraguille.recipespring.entities.Ingredient;
 import es.solsaraguille.recipespring.repositories.IngredientRepository;
 import org.springframework.web.bind.annotation.*;
@@ -8,11 +7,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping
+@RequestMapping("/api/ingredients")
 @CrossOrigin
 public class IngredientController {
 
-    private IngredientRepository ingredientRepository;
+    private final IngredientRepository ingredientRepository;
 
     public IngredientController(IngredientRepository ingredientRepository) {
         this.ingredientRepository = ingredientRepository;
@@ -27,5 +26,4 @@ public class IngredientController {
     public Ingredient create(@RequestBody Ingredient ingredient) {
         return ingredientRepository.save(ingredient);
     }
-
 }

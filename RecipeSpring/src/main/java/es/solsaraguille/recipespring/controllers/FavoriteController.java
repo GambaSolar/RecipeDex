@@ -1,11 +1,9 @@
 package es.solsaraguille.recipespring.controllers;
 
-
 import es.solsaraguille.recipespring.entities.Favorite;
 import es.solsaraguille.recipespring.entities.Recipe;
 import es.solsaraguille.recipespring.entities.User;
 import es.solsaraguille.recipespring.repositories.FavoriteRepository;
-import es.solsaraguille.recipespring.repositories.RecipeIngredientRepository;
 import es.solsaraguille.recipespring.repositories.RecipeRepository;
 import es.solsaraguille.recipespring.repositories.UserRepository;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping
+@RequestMapping("/api/favorites")
 @CrossOrigin
 public class FavoriteController {
 
@@ -22,18 +20,25 @@ public class FavoriteController {
     private final UserRepository userRepository;
     private final RecipeRepository recipeRepository;
 
-    public FavoriteController(FavoriteRepository favoriteRepository, UserRepository userRepository, RecipeRepository recipeRepository) {
+    public FavoriteController(FavoriteRepository favoriteRepository,
+                              UserRepository userRepository,
+                              RecipeRepository recipeRepository) {
         this.favoriteRepository = favoriteRepository;
         this.userRepository = userRepository;
         this.recipeRepository = recipeRepository;
     }
 
     @PostMapping
-    public Favorite add(@RequestParam Integer userId, @RequestParam Integer recipeId) {
-        User user = userRepository.findById(userId).orElseThrow();
-        Recipe recipe = recipeRepository.findById(recipeId).orElseThrow();
+    public Favorite add(@RequestParam Integer userId,
+                        @RequestParam Integer recipeId) {
 
-        if(favoriteRepository.existsByRecipeAndUser(recipe,user)){
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Recipe recipe = recipeRepository.findById(recipeId)
+                .orElseThrow(() -> new RuntimeException("Recipe not found"));
+
+        if (favoriteRepository.existsByRecipeAndUser(recipe, user)) {
             return null;
         }
 
@@ -42,14 +47,17 @@ public class FavoriteController {
         favorite.setRecipe(recipe);
 
         return favoriteRepository.save(favorite);
-
     }
 
     @DeleteMapping
-    public void delete(@RequestParam Integer userId, @RequestParam Integer recipeId) {
+    public void delete(@RequestParam Integer userId,
+                       @RequestParam Integer recipeId) {
 
-        User user = userRepository.findById(userId).orElseThrow();
-        Recipe recipe = recipeRepository.findById(recipeId).orElseThrow();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Recipe recipe = recipeRepository.findById(recipeId)
+                .orElseThrow(() -> new RuntimeException("Recipe not found"));
 
         favoriteRepository.deleteByRecipeAndUser(recipe, user);
     }
@@ -57,12 +65,12 @@ public class FavoriteController {
     @GetMapping("/user/{userId}")
     public List<Recipe> getFavorites(@PathVariable Integer userId) {
 
-        User user = userRepository.findById(userId).orElseThrow();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         return favoriteRepository.findByUser(user)
                 .stream()
                 .map(Favorite::getRecipe)
                 .collect(Collectors.toList());
     }
-
 }

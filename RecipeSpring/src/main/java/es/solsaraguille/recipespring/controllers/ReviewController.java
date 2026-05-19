@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping
+@RequestMapping("/api/reviews")
 @CrossOrigin
 public class ReviewController {
 
@@ -18,6 +18,7 @@ public class ReviewController {
     public ReviewController(ReviewRepository reviewRepository,
                             UserRepository userRepository,
                             RecipeRepository recipeRepository) {
+
         this.reviewRepository = reviewRepository;
         this.userRepository = userRepository;
         this.recipeRepository = recipeRepository;
@@ -28,8 +29,11 @@ public class ReviewController {
                          @RequestParam Integer recipeId,
                          @RequestBody Review review) {
 
-        User user = userRepository.findById(userId).orElseThrow();
-        Recipe recipe = recipeRepository.findById(recipeId).orElseThrow();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Recipe recipe = recipeRepository.findById(recipeId)
+                .orElseThrow(() -> new RuntimeException("Recipe not found"));
 
         review.setUser(user);
         review.setRecipe(recipe);
@@ -40,7 +44,9 @@ public class ReviewController {
     @GetMapping("/recipe/{recipeId}")
     public List<Review> getByRecipe(@PathVariable Integer recipeId) {
 
-        Recipe recipe = recipeRepository.findById(recipeId).orElseThrow();
+        Recipe recipe = recipeRepository.findById(recipeId)
+                .orElseThrow(() -> new RuntimeException("Recipe not found"));
+
         return reviewRepository.findByRecipe(recipe);
     }
 }

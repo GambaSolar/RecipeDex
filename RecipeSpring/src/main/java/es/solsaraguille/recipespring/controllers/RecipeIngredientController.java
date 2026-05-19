@@ -1,41 +1,39 @@
 package es.solsaraguille.recipespring.controllers;
 
-
-import es.solsaraguille.recipespring.entities.Ingredient;
-import es.solsaraguille.recipespring.entities.Recipe;
-import es.solsaraguille.recipespring.entities.RecipeIngredient;
-import es.solsaraguille.recipespring.repositories.IngredientRepository;
-import es.solsaraguille.recipespring.repositories.RecipeIngredientRepository;
-import es.solsaraguille.recipespring.repositories.RecipeRepository;
+import es.solsaraguille.recipespring.entities.*;
+import es.solsaraguille.recipespring.repositories.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping
+@RequestMapping("/api/recipe-ingredients")
 @CrossOrigin
 public class RecipeIngredientController {
 
-    private RecipeIngredientRepository recipeIngredientRepository;
-    private RecipeRepository recipeRepository;
-    private IngredientRepository ingredientRepository;
+    private final RecipeIngredientRepository recipeIngredientRepository;
+    private final RecipeRepository recipeRepository;
+    private final IngredientRepository ingredientRepository;
 
     public RecipeIngredientController(RecipeIngredientRepository repo,
                                       RecipeRepository recipeRepository,
-                                      IngredientRepository ingredientRepository){
+                                      IngredientRepository ingredientRepository) {
 
         this.recipeIngredientRepository = repo;
         this.recipeRepository = recipeRepository;
         this.ingredientRepository = ingredientRepository;
-
     }
 
     @PostMapping
-    public RecipeIngredient add(@RequestParam Integer recipeId, @RequestParam Integer ingredientId){
+    public RecipeIngredient add(@RequestParam Integer recipeId,
+                                @RequestParam Integer ingredientId) {
 
-        Recipe recipe =  recipeRepository.findById(recipeId).orElseThrow();
-        Ingredient ingredient = ingredientRepository.findById(ingredientId).orElseThrow();
+        Recipe recipe = recipeRepository.findById(recipeId)
+                .orElseThrow(() -> new RuntimeException("Recipe not found"));
+
+        Ingredient ingredient = ingredientRepository.findById(ingredientId)
+                .orElseThrow(() -> new RuntimeException("Ingredient not found"));
 
         RecipeIngredient ri = new RecipeIngredient();
         ri.setRecipe(recipe);
@@ -45,13 +43,14 @@ public class RecipeIngredientController {
     }
 
     @GetMapping("/ingredient/{ingredientId}")
-    public List<Recipe> getRecipesByIngredient(@PathVariable Integer ingredientId){
-        Ingredient ingredient = ingredientRepository.findById(ingredientId).orElseThrow();
+    public List<Recipe> getRecipesByIngredient(@PathVariable Integer ingredientId) {
+
+        Ingredient ingredient = ingredientRepository.findById(ingredientId)
+                .orElseThrow(() -> new RuntimeException("Ingredient not found"));
 
         return recipeIngredientRepository.findByIngredient(ingredient)
                 .stream()
                 .map(RecipeIngredient::getRecipe)
                 .collect(Collectors.toList());
     }
-
 }

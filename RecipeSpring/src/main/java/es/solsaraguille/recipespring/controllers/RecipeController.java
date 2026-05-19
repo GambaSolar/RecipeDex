@@ -1,6 +1,5 @@
 package es.solsaraguille.recipespring.controllers;
 
-
 import es.solsaraguille.recipespring.entities.Recipe;
 import es.solsaraguille.recipespring.entities.User;
 import es.solsaraguille.recipespring.repositories.RecipeRepository;
@@ -17,7 +16,8 @@ public class RecipeController {
     private final RecipeRepository recipeRepository;
     private final UserRepository userRepository;
 
-    public RecipeController(RecipeRepository recipeRepository, UserRepository userRepository) {
+    public RecipeController(RecipeRepository recipeRepository,
+                            UserRepository userRepository) {
         this.recipeRepository = recipeRepository;
         this.userRepository = userRepository;
     }
@@ -33,9 +33,12 @@ public class RecipeController {
     }
 
     @PostMapping
-    public Recipe create(@RequestParam Integer userId, @RequestParam Integer recipeId, @RequestBody Recipe recipe) {
+    public Recipe create(@RequestParam Integer userId,
+                         @RequestBody Recipe recipe) {
 
-        User user = userRepository.findById(userId).orElseThrow();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         recipe.setUser(user);
 
         return recipeRepository.save(recipe);
@@ -43,7 +46,10 @@ public class RecipeController {
 
     @GetMapping("/user/{userId}")
     public List<Recipe> getByUserId(@PathVariable Integer userId) {
-        User user = userRepository.findById(userId).orElseThrow();
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         return recipeRepository.findByUser(user);
     }
 
@@ -56,5 +62,4 @@ public class RecipeController {
     public void delete(@PathVariable Integer id) {
         recipeRepository.deleteById(id);
     }
-
 }
