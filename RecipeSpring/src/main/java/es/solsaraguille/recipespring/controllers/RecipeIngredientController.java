@@ -2,6 +2,8 @@ package es.solsaraguille.recipespring.controllers;
 
 import es.solsaraguille.recipespring.entities.*;
 import es.solsaraguille.recipespring.repositories.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,31 +28,48 @@ public class RecipeIngredientController {
     }
 
     @PostMapping
-    public RecipeIngredient add(@RequestParam Integer recipeId,
-                                @RequestParam Integer ingredientId) {
+    public ResponseEntity<?> add(@RequestParam Integer recipeId,
+                                 @RequestParam Integer ingredientId) {
 
         Recipe recipe = recipeRepository.findById(recipeId)
-                .orElseThrow(() -> new RuntimeException("Recipe not found"));
+                .orElse(null);
+
+        if (recipe == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Recipe not found");
+        }
 
         Ingredient ingredient = ingredientRepository.findById(ingredientId)
-                .orElseThrow(() -> new RuntimeException("Ingredient not found"));
+                .orElse(null);
+
+        if (ingredient == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Ingredient not found");
+        }
 
         RecipeIngredient ri = new RecipeIngredient();
         ri.setRecipe(recipe);
         ri.setIngredient(ingredient);
 
-        return recipeIngredientRepository.save(ri);
+        return ResponseEntity.ok(recipeIngredientRepository.save(ri));
     }
 
     @GetMapping("/ingredient/{ingredientId}")
-    public List<Recipe> getRecipesByIngredient(@PathVariable Integer ingredientId) {
+    public ResponseEntity<?> getRecipesByIngredient(@PathVariable Integer ingredientId) {
 
         Ingredient ingredient = ingredientRepository.findById(ingredientId)
-                .orElseThrow(() -> new RuntimeException("Ingredient not found"));
+                .orElse(null);
 
-        return recipeIngredientRepository.findByIngredient(ingredient)
+        if (ingredient == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Ingredient not found");
+        }
+
+        List<Recipe> recipes = recipeIngredientRepository.findByIngredient(ingredient)
                 .stream()
                 .map(RecipeIngredient::getRecipe)
                 .collect(Collectors.toList());
+
+        return ResponseEntity.ok(recipes);
     }
 }

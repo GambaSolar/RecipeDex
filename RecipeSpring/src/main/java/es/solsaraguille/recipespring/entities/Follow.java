@@ -1,6 +1,6 @@
 package es.solsaraguille.recipespring.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,11 +18,11 @@ public class Follow {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "follower_id", nullable = false)
-    @JsonIgnore
+    @JsonIgnoreProperties({"recipes", "favorites", "followers", "following"})
     private User follower;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "followed_id", nullable = false)
-    @JsonIgnore
+    @JsonIgnoreProperties({"recipes", "favorites", "followers", "following"})
     private User followed;
 }

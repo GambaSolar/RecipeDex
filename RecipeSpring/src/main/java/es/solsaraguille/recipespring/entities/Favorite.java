@@ -9,18 +9,16 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "favorite")
+@IdClass(FavoriteId.class)
 public class Favorite {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "favorite_id", nullable = false)
-    private Integer id;
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore
     private User user;
 
+    @Id
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "recipe_id", nullable = false)
     @JsonIgnore

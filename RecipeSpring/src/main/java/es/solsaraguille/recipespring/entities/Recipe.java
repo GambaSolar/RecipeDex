@@ -1,9 +1,11 @@
 package es.solsaraguille.recipespring.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -18,7 +20,7 @@ public class Recipe {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnore
+    @JsonIgnoreProperties({"recipes", "favorites", "followers", "following"})
     private User user;
 
     @Column(name = "name", nullable = false, length = 100)
@@ -29,4 +31,16 @@ public class Recipe {
 
     @Column(name = "preparation_time", nullable = false)
     private Integer preparationTime;
+
+    @OneToMany(mappedBy = "recipe")
+    @JsonIgnoreProperties({"recipe"})
+    private List<RecipeIngredient> recipeIngredients;
+
+    @OneToMany(mappedBy = "recipe")
+    @JsonIgnoreProperties({"recipe"})
+    private List<Review> reviews;
+
+    @OneToMany(mappedBy = "recipe")
+    @JsonIgnoreProperties({"recipe"})
+    private List<Favorite> favorites;
 }

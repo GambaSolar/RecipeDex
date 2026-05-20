@@ -1,6 +1,6 @@
 package es.solsaraguille.recipespring.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,12 +18,12 @@ public class Review {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "recipe_id", nullable = false)
-    @JsonIgnore
+    @JsonIgnoreProperties({"reviews", "favorites", "recipeIngredients"})
     private Recipe recipe;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnore
+    @JsonIgnoreProperties({"recipes", "favorites", "followers", "following"})
     private User user;
 
     @Column(name = "rating", nullable = false)

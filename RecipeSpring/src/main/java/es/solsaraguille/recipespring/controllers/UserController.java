@@ -1,8 +1,9 @@
 package es.solsaraguille.recipespring.controllers;
 
-
 import es.solsaraguille.recipespring.entities.User;
 import es.solsaraguille.recipespring.repositories.UserRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,37 +20,59 @@ public class UserController {
     }
 
     @GetMapping
-    public List<User> getAll() {
-        return userRepository.findAll();
+    public ResponseEntity<List<User>> getAll() {
+        return ResponseEntity.ok(userRepository.findAll());
     }
 
     @GetMapping("/{id}")
-    public User getById(@PathVariable Integer id) {
-        return userRepository.findById(id).orElse(null);
+    public ResponseEntity<?> getById(@PathVariable Integer id) {
+
+        return userRepository.findById(id)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() ->
+                        ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body("User not found")
+                );
     }
 
     @PostMapping("/register")
-    public User register(@RequestBody User user) {
+    public ResponseEntity<?> register(@RequestBody User user) {
 
         if (userRepository.existsByUsername(user.getUsername())) {
-            throw new RuntimeException("Username is already in use");
-        }
-        if (userRepository.existsByEmail(user.getEmail())) {
-            throw new RuntimeException("Email is already in use");
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Username is already in use");
         }
 
-        return userRepository.save(user);
+        if (userRepository.existsByEmail(user.getEmail())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Email is already in use");
+        }
+
+        return ResponseEntity.ok(userRepository.save(user));
     }
 
     @PostMapping("/login")
-    public User login(@RequestBody User user) {
-        return userRepository.findByUsername(user.getUsername()).filter
-                (u -> u.getPassword().equals(user.getPassword())).orElse(null);
+    public ResponseEntity<?> login(@RequestBody User user) {
+
+        return userRepository.findByUsername(user.getUsername())
+                .filter(u -> u.getPassword().equals(user.getPassword()))
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() ->
+                        ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                .body("Invalid username or password")
+                );
     }
 
     @DeleteMapping("/{id}")
-    public void deleteById(@PathVariable Integer id) {
-        userRepository.deleteById(id);
-    }
+    public ResponseEntity<?> deleteById(@PathVariable Integer id) {
 
+        if (!userRepository.existsById(id)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("User not found");
+        }
+
+        userRepository.deleteById(id);
+
+        return ResponseEntity.ok("User deleted successfully");
+    }
 }

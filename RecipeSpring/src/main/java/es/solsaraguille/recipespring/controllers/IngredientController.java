@@ -2,6 +2,8 @@ package es.solsaraguille.recipespring.controllers;
 
 import es.solsaraguille.recipespring.entities.Ingredient;
 import es.solsaraguille.recipespring.repositories.IngredientRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,12 +20,27 @@ public class IngredientController {
     }
 
     @GetMapping
-    public List<Ingredient> getAll() {
-        return ingredientRepository.findAll();
+    public ResponseEntity<List<Ingredient>> getAll() {
+        return ResponseEntity.ok(ingredientRepository.findAll());
     }
 
     @PostMapping
-    public Ingredient create(@RequestBody Ingredient ingredient) {
-        return ingredientRepository.save(ingredient);
+    public ResponseEntity<?> create(@RequestBody Ingredient ingredient) {
+
+        if (ingredient.getName() == null || ingredient.getName().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Ingredient name cannot be empty");
+        }
+
+        boolean exists = ingredientRepository.findAll()
+                .stream()
+                .anyMatch(i -> i.getName().equalsIgnoreCase(ingredient.getName()));
+
+        if (exists) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Ingredient already exists");
+        }
+
+        return ResponseEntity.ok(ingredientRepository.save(ingredient));
     }
 }

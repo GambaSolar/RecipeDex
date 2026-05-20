@@ -6,6 +6,8 @@ import es.solsaraguille.recipespring.entities.User;
 import es.solsaraguille.recipespring.repositories.FavoriteRepository;
 import es.solsaraguille.recipespring.repositories.RecipeRepository;
 import es.solsaraguille.recipespring.repositories.UserRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,48 +31,108 @@ public class FavoriteController {
     }
 
     @PostMapping
-    public Favorite add(@RequestParam Integer userId,
-                        @RequestParam Integer recipeId) {
+    public ResponseEntity<?> add(@RequestParam Integer userId,
+                                 @RequestParam Integer recipeId) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElse(null);
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("User not found");
+        }
 
         Recipe recipe = recipeRepository.findById(recipeId)
-                .orElseThrow(() -> new RuntimeException("Recipe not found"));
+                .orElse(null);
+
+        if (recipe == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Recipe not found");
+        }
 
         if (favoriteRepository.existsByRecipeAndUser(recipe, user)) {
-            return null;
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Favorite already exists");
         }
 
         Favorite favorite = new Favorite();
         favorite.setUser(user);
         favorite.setRecipe(recipe);
 
-        return favoriteRepository.save(favorite);
+        return ResponseEntity.ok(favoriteRepository.save(favorite));
     }
 
     @DeleteMapping
-    public void delete(@RequestParam Integer userId,
-                       @RequestParam Integer recipeId) {
+    public ResponseEntity<?> delete(@RequestParam Integer userId,
+                                    @RequestParam Integer recipeId) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElse(null);
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("User not found");
+        }
 
         Recipe recipe = recipeRepository.findById(recipeId)
-                .orElseThrow(() -> new RuntimeException("Recipe not found"));
+                .orElse(null);
+
+        if (recipe == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Recipe not found");
+        }
+
+        if (!favoriteRepository.existsByRecipeAndUser(recipe, user)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Favorite not found");
+        }
 
         favoriteRepository.deleteByRecipeAndUser(recipe, user);
+
+        return ResponseEntity.ok("Favorite removed successfully");
     }
 
     @GetMapping("/user/{userId}")
-    public List<Recipe> getFavorites(@PathVariable Integer userId) {
+    public ResponseEntity<?> getFavorites(@PathVariable Integer userId) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElse(null);
 
-        return favoriteRepository.findByUser(user)
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("User not found");
+        }
+
+        List<Recipe> favorites = favoriteRepository.findByUser(user)
                 .stream()
                 .map(Favorite::getRecipe)
                 .collect(Collectors.toList());
+
+        return ResponseEntity.ok(favorites);
+    }
+
+    @GetMapping("/check")
+    public ResponseEntity<?> isFavorite(@RequestParam Integer userId,
+                                        @RequestParam Integer recipeId) {
+
+        User user = userRepository.findById(userId)
+                .orElse(null);
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("User not found");
+        }
+
+        Recipe recipe = recipeRepository.findById(recipeId)
+                .orElse(null);
+
+        if (recipe == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Recipe not found");
+        }
+
+        boolean exists = favoriteRepository.existsByRecipeAndUser(recipe, user);
+
+        return ResponseEntity.ok(exists);
     }
 }
