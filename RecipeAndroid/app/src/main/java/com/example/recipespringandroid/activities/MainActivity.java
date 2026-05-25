@@ -2,96 +2,51 @@ package com.example.recipespringandroid.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
-import android.widget.Toast;
+import android.view.Menu;
+import android.view.MenuItem;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+import androidx.fragment.app.Fragment;
 
 import com.example.recipespringandroid.R;
-import com.example.recipespringandroid.adapters.RecipeAdapter;
-import com.example.recipespringandroid.api.ApiClient;
-import com.example.recipespringandroid.api.ApiService;
-import com.example.recipespringandroid.models.Recipe;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import com.example.recipespringandroid.fragments.HomeFragment;
 
 public class MainActivity extends AppCompatActivity {
-
-    private RecyclerView recyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        recyclerView = findViewById(R.id.recyclerView);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        androidx.appcompat.widget.Toolbar toolbar =
+                findViewById(R.id.toolbar);
 
-        loadRecipes();
+        setSupportActionBar(toolbar);
+
+        loadFragment(new HomeFragment());
     }
 
-    private void loadRecipes() {
+    private void loadFragment(Fragment fragment) {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .commit();
+    }
 
-        ApiService api = ApiClient.getClient().create(ApiService.class);
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
 
-        api.getAllRecipes().enqueue(new Callback<List<Recipe>>() {
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
 
-            @Override
-            public void onResponse(Call<List<Recipe>> call, Response<List<Recipe>> response) {
+        if (item.getItemId() == R.id.action_login) {
+            startActivity(new Intent(this, LoginActivity.class));
+            return true;
+        }
 
-                if (!response.isSuccessful()) {
-                    Toast.makeText(MainActivity.this,
-                            "Error del servidor: " + response.code(),
-                            Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                List<Recipe> recipes = response.body();
-
-                if (recipes == null || recipes.isEmpty()) {
-                    Toast.makeText(MainActivity.this,
-                            "No hay recetas disponibles",
-                            Toast.LENGTH_SHORT).show();
-
-                    recyclerView.setAdapter(
-                            new RecipeAdapter(new ArrayList<>(), recipe -> {})
-                    );
-                    return;
-                }
-
-                RecipeAdapter adapter = new RecipeAdapter(recipes, recipe -> {
-
-                    if (recipe == null || recipe.getId() == null) {
-                        Toast.makeText(MainActivity.this,
-                                "Receta inválida",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    Intent intent = new Intent(MainActivity.this, RecipeDetailActivity.class);
-                    intent.putExtra("recipeId", recipe.getId());
-                    startActivity(intent);
-                });
-
-                recyclerView.setAdapter(adapter);
-            }
-
-            @Override
-            public void onFailure(Call<List<Recipe>> call, Throwable t) {
-
-                Log.e("MAIN_ERROR", "Error cargando recetas", t);
-
-                Toast.makeText(MainActivity.this,
-                        "Error de conexión: " + t.getMessage(),
-                        Toast.LENGTH_LONG).show();
-            }
-        });
+        return super.onOptionsItemSelected(item);
     }
 }

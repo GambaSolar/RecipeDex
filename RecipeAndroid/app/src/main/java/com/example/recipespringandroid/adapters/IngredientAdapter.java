@@ -3,23 +3,31 @@ package com.example.recipespringandroid.adapters;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.recipespringandroid.R;
 import com.example.recipespringandroid.models.Ingredient;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class IngredientAdapter extends RecyclerView.Adapter<IngredientAdapter.IngredientViewHolder> {
 
     private List<Ingredient> ingredientList;
-    private OnIngredientClickListener listener;
+    private List<Integer> selectedIds = new ArrayList<>();
 
-    public interface OnIngredientClickListener {
-        void onIngredientClick(Ingredient ingredient);
+    public interface OnSelectionChangedListener {
+        void onSelectionChanged(List<Integer> selectedIds);
     }
 
-    public IngredientAdapter(List<Ingredient> ingredientList, OnIngredientClickListener listener) {
+    private OnSelectionChangedListener listener;
+
+    public IngredientAdapter(List<Ingredient> ingredientList,
+                             OnSelectionChangedListener listener) {
         this.ingredientList = ingredientList;
         this.listener = listener;
     }
@@ -41,11 +49,32 @@ public class IngredientAdapter extends RecyclerView.Adapter<IngredientAdapter.In
 
         holder.tvName.setText(ingredient.getName());
 
+        holder.checkBox.setOnCheckedChangeListener(null);
+
+        holder.checkBox.setChecked(selectedIds.contains(ingredient.getId()));
+
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onIngredientClick(ingredient);
-            }
+            toggleSelection(ingredient);
+            notifyItemChanged(position);
         });
+
+        holder.checkBox.setOnClickListener(v -> {
+            toggleSelection(ingredient);
+            notifyItemChanged(position);
+        });
+    }
+
+    private void toggleSelection(Ingredient ingredient) {
+
+        if (selectedIds.contains(ingredient.getId())) {
+            selectedIds.remove(Integer.valueOf(ingredient.getId()));
+        } else {
+            selectedIds.add(ingredient.getId());
+        }
+
+        if (listener != null) {
+            listener.onSelectionChanged(selectedIds);
+        }
     }
 
     @Override
@@ -56,10 +85,13 @@ public class IngredientAdapter extends RecyclerView.Adapter<IngredientAdapter.In
     public static class IngredientViewHolder extends RecyclerView.ViewHolder {
 
         TextView tvName;
+        CheckBox checkBox;
 
         public IngredientViewHolder(@NonNull View itemView) {
             super(itemView);
+
             tvName = itemView.findViewById(R.id.tvIngredientName);
+            checkBox = itemView.findViewById(R.id.checkboxIngredient);
         }
     }
 }

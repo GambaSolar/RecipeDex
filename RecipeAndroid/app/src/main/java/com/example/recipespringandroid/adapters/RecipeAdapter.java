@@ -1,13 +1,18 @@
 package com.example.recipespringandroid.adapters;
 
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.recipespringandroid.R;
+import com.example.recipespringandroid.activities.RecipeDetailActivity;
 import com.example.recipespringandroid.models.Recipe;
+import com.google.android.material.card.MaterialCardView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,9 +52,9 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
         holder.tvTime.setText(recipe.getPreparationTime() + " min");
 
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onRecipeClick(recipe);
-            }
+            Intent intent = new Intent(v.getContext(), RecipeDetailActivity.class);
+            intent.putExtra("recipeId", recipe.getId());
+            v.getContext().startActivity(intent);
         });
     }
 
@@ -59,19 +64,22 @@ public class RecipeAdapter extends RecyclerView.Adapter<RecipeAdapter.RecipeView
     }
 
     public void updateData(List<Recipe> newList) {
-        this.recipeList = newList != null ? newList : new ArrayList<>();
+        this.recipeList = (newList != null) ? newList : new ArrayList<>();
         notifyDataSetChanged();
     }
 
     public static class RecipeViewHolder extends RecyclerView.ViewHolder {
 
         TextView tvName, tvTime;
+        MaterialCardView card;
 
         public RecipeViewHolder(@NonNull View itemView) {
             super(itemView);
 
             tvName = itemView.findViewById(R.id.tvName);
             tvTime = itemView.findViewById(R.id.tvTime);
+            card = itemView.findViewById(R.id.cardRecipe);
         }
     }
+
 }

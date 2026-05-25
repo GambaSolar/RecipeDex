@@ -6,11 +6,16 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.recipespringandroid.R;
-import com.example.recipespringandroid.api.repository.ReviewRepository;
+import com.example.recipespringandroid.api.ApiClient;
+import com.example.recipespringandroid.api.ApiService;
 import com.example.recipespringandroid.models.Review;
 import com.example.recipespringandroid.utils.SessionManager;
+
+import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -21,7 +26,9 @@ public class ReviewsActivity extends AppCompatActivity {
     private EditText etComment, etRating;
     private Button btnSend;
 
-    private ReviewRepository reviewRepository;
+    private RecyclerView recyclerReviews;
+
+    private int recipeId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,9 +39,10 @@ public class ReviewsActivity extends AppCompatActivity {
         etRating = findViewById(R.id.etRating);
         btnSend = findViewById(R.id.btnSend);
 
-        reviewRepository = new ReviewRepository();
+        recyclerReviews = findViewById(R.id.recyclerReviews);
+        recyclerReviews.setLayoutManager(new LinearLayoutManager(this));
 
-        int recipeId = getIntent().getIntExtra("recipeId", -1);
+        recipeId = getIntent().getIntExtra("recipeId", -1);
 
         if (recipeId == -1) {
             Toast.makeText(this, "Receta inválida", Toast.LENGTH_SHORT).show();
@@ -42,7 +50,36 @@ public class ReviewsActivity extends AppCompatActivity {
             return;
         }
 
+        loadReviews(recipeId);
+
         btnSend.setOnClickListener(v -> sendReview(recipeId));
+    }
+
+    private void loadReviews(int recipeId) {
+
+        ApiService api = ApiClient.getClient().create(ApiService.class);
+
+        api.getReviewsByRecipe(recipeId).enqueue(new Callback<List<Review>>() {
+
+            @Override
+            public void onResponse(Call<List<Review>> call, Response<List<Review>> response) {
+
+                if (!response.isSuccessful() || response.body() == null) return;
+
+                List<Review> reviews = response.body();
+
+                // TODO: aquí conectas tu ReviewAdapter
+                // recyclerReviews.setAdapter(new ReviewAdapter(reviews));
+
+            }
+
+            @Override
+            public void onFailure(Call<List<Review>> call, Throwable t) {
+                Toast.makeText(ReviewsActivity.this,
+                        "Error cargando reviews",
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void sendReview(int recipeId) {
@@ -75,8 +112,11 @@ public class ReviewsActivity extends AppCompatActivity {
         review.setComment(comment);
         review.setRating(rating);
 
-        reviewRepository.addReview(userId, recipeId, review)
+        ApiClient.getClient()
+                .create(ApiService.class)
+                .addReview(userId, recipeId, review)
                 .enqueue(new Callback<Review>() {
+
                     @Override
                     public void onResponse(Call<Review> call, Response<Review> response) {
 
@@ -84,7 +124,11 @@ public class ReviewsActivity extends AppCompatActivity {
                             Toast.makeText(ReviewsActivity.this,
                                     "Review enviada correctamente",
                                     Toast.LENGTH_SHORT).show();
-                            finish();
+
+                            etComment.setText("");
+                            etRating.setText("");
+
+                            loadReviews(recipeId);
                         } else {
                             Toast.makeText(ReviewsActivity.this,
                                     "Error al enviar review",

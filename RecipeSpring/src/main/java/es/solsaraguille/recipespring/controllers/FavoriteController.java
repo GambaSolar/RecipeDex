@@ -135,4 +135,26 @@ public class FavoriteController {
 
         return ResponseEntity.ok(exists);
     }
+
+    @GetMapping("/count/{recipeId}")
+    public ResponseEntity<?> countFavorites(
+            @PathVariable Integer recipeId
+    ) {
+
+        Recipe recipe = recipeRepository.findById(recipeId)
+                .orElse(null);
+
+        if (recipe == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Recipe not found");
+        }
+
+        int total = favoriteRepository
+                .findByRecipe(recipe)
+                .size();
+
+        return ResponseEntity.ok(total);
+    }
+
+
 }

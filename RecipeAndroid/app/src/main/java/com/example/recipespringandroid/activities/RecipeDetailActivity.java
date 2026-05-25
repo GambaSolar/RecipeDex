@@ -1,5 +1,6 @@
 package com.example.recipespringandroid.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
@@ -19,10 +20,19 @@ import retrofit2.Response;
 
 public class RecipeDetailActivity extends AppCompatActivity {
 
-    private TextView tvName, tvDescription, tvTime;
-    private Button btnFavorite;
+    private TextView tvName;
+    private TextView tvDescription;
+    private TextView tvTime;
+    private TextView tvFavoriteCount;
+
+    private Button btnToggleFavorite;
+    private Button btnComments;
 
     private SessionManager sessionManager;
+    private ApiService api;
+
+    private int recipeId;
+    private boolean isFavorite = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,42 +42,53 @@ public class RecipeDetailActivity extends AppCompatActivity {
         tvName = findViewById(R.id.tvName);
         tvDescription = findViewById(R.id.tvDescription);
         tvTime = findViewById(R.id.tvTime);
-        btnFavorite = findViewById(R.id.btnFavorite);
+        tvFavoriteCount = findViewById(R.id.tvFavoriteCount);
+
+        btnToggleFavorite = findViewById(R.id.btnToggleFavorite);
+        btnComments = findViewById(R.id.btnComments);
 
         sessionManager = new SessionManager(this);
+        api = ApiClient.getClient().create(ApiService.class);
 
-        int recipeId = getIntent().getIntExtra("recipeId", -1);
+        recipeId = getIntent().getIntExtra("recipeId", -1);
 
         if (recipeId == -1) {
-            Toast.makeText(this, "Error: receta inválida", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Receta inválida", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
         loadRecipe(recipeId);
+        loadFavoriteCount();
 
-        btnFavorite.setOnClickListener(v -> addFavorite(recipeId));
+        btnToggleFavorite.setOnClickListener(v -> toggleFavorite());
+
+        btnComments.setOnClickListener(v -> {
+            Intent intent = new Intent(this, ReviewsActivity.class);
+            intent.putExtra("recipeId", recipeId);
+            startActivity(intent);
+        });
     }
 
     private void loadRecipe(int id) {
-
-        ApiService api = ApiClient.getClient().create(ApiService.class);
-
         api.getRecipeById(id).enqueue(new Callback<Recipe>() {
             @Override
             public void onResponse(Call<Recipe> call, Response<Recipe> response) {
-
                 if (response.isSuccessful() && response.body() != null) {
+                    Recipe recipe = response.body();
 
-                    Recipe r = response.body();
+                    tvName.setText(recipe.getName());
+                    tvDescription.setText(recipe.getDescription());
+                    Integer time = recipe.getPreparationTime();
 
-                    tvName.setText(r.getName());
-                    tvDescription.setText(r.getDescription());
-                    tvTime.setText("Tiempo: " + r.getPreparationTime() + " min");
-
+                    tvTime.setText(
+                            "Tiempo: " +
+                                    (time != null ? time : 0) +
+                                    " min"
+                    );
                 } else {
                     Toast.makeText(RecipeDetailActivity.this,
-                            "Error al cargar receta",
+                            "Error cargando receta",
                             Toast.LENGTH_SHORT).show();
                     finish();
                 }
@@ -83,7 +104,21 @@ public class RecipeDetailActivity extends AppCompatActivity {
         });
     }
 
-    private void addFavorite(int recipeId) {
+    private void loadFavoriteCount() {
+        api.getFavoriteCount(recipeId).enqueue(new Callback<Integer>() {
+            @Override
+            public void onResponse(Call<Integer> call, Response<Integer> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    tvFavoriteCount.setText("⭐ " + response.body() + " favoritos");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Integer> call, Throwable t) {}
+        });
+    }
+
+    private void toggleFavorite() {
 
         if (!sessionManager.isLoggedIn()) {
             Toast.makeText(this, "Debes iniciar sesión", Toast.LENGTH_SHORT).show();
@@ -92,30 +127,37 @@ public class RecipeDetailActivity extends AppCompatActivity {
 
         int userId = sessionManager.getUserId();
 
-        ApiService api = ApiClient.getClient().create(ApiService.class);
+        if (!isFavorite) {
 
-        api.addFavorite(userId, recipeId).enqueue(new Callback<Void>() {
-
-            @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
-
-                if (response.isSuccessful()) {
-                    Toast.makeText(RecipeDetailActivity.this,
-                            "Añadido a favoritos",
-                            Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(RecipeDetailActivity.this,
-                            "No se pudo añadir a favoritos",
-                            Toast.LENGTH_SHORT).show();
+            api.addFavorite(userId, recipeId).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    if (response.isSuccessful()) {
+                        isFavorite = true;
+                        btnToggleFavorite.setText("Eliminar favorito");
+                        loadFavoriteCount();
+                    }
                 }
-            }
 
-            @Override
-            public void onFailure(Call<Void> call, Throwable t) {
-                Toast.makeText(RecipeDetailActivity.this,
-                        "Error de red",
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {}
+            });
+
+        } else {
+
+            api.removeFavorite(userId, recipeId).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    if (response.isSuccessful()) {
+                        isFavorite = false;
+                        btnToggleFavorite.setText("Añadir a favoritos");
+                        loadFavoriteCount();
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {}
+            });
+        }
     }
 }

@@ -4,10 +4,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.recipespringandroid.R;
 import com.example.recipespringandroid.models.Review;
+import com.google.android.material.card.MaterialCardView;
+
 import java.util.List;
 
 public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewViewHolder> {
@@ -39,18 +43,20 @@ public class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.ReviewView
 
     @Override
     public int getItemCount() {
-        return reviewList.size();
+        return reviewList != null ? reviewList.size() : 0;
     }
 
     public static class ReviewViewHolder extends RecyclerView.ViewHolder {
 
         TextView tvRating, tvComment;
+        MaterialCardView card;
 
         public ReviewViewHolder(@NonNull View itemView) {
             super(itemView);
 
             tvRating = itemView.findViewById(R.id.tvRating);
             tvComment = itemView.findViewById(R.id.tvComment);
+            card = itemView.findViewById(R.id.cardReview);
         }
     }
 }
