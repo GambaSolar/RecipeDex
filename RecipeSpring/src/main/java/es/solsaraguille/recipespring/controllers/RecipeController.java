@@ -144,4 +144,40 @@ public class RecipeController {
 
         return ResponseEntity.ok("Recipe deleted successfully");
     }
+
+    @GetMapping("/search/advanced")
+    public ResponseEntity<?> advancedSearch(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Integer ingredientId,
+            @RequestParam(required = false) Integer maxTime
+    ) {
+
+        List<Recipe> recipes = recipeRepository.findAll();
+
+        if (name != null && !name.isEmpty()) {
+            recipes = recipes.stream()
+                    .filter(r -> r.getName().toLowerCase()
+                            .contains(name.toLowerCase()))
+                    .toList();
+        }
+
+        if (ingredientId != null) {
+            recipes = recipes.stream()
+                    .filter(r -> r.getRecipeIngredients()
+                            .stream()
+                            .anyMatch(ri -> ri.getIngredient()
+                                    .getId()
+                                    .equals(ingredientId)))
+                    .toList();
+        }
+
+        if (maxTime != null) {
+            recipes = recipes.stream()
+                    .filter(r -> r.getPreparationTime() <= maxTime)
+                    .toList();
+        }
+
+        return ResponseEntity.ok(recipes);
+    }
+
 }
