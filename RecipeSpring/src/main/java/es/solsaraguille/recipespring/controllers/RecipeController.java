@@ -1,5 +1,6 @@
 package es.solsaraguille.recipespring.controllers;
 
+import es.solsaraguille.recipespring.dto.RecipeDTO;
 import es.solsaraguille.recipespring.entities.*;
 import es.solsaraguille.recipespring.repositories.*;
 import org.springframework.http.HttpStatus;
@@ -28,9 +29,28 @@ public class RecipeController {
         this.reviewRepository = reviewRepository;
     }
 
+    private RecipeDTO toDTO(Recipe r) {
+        RecipeDTO dto = new RecipeDTO();
+        dto.id = r.getId();
+        dto.name = r.getName();
+        dto.description = r.getDescription();
+        dto.preparationTime = r.getPreparationTime();
+        return dto;
+    }
+
     @GetMapping
-    public ResponseEntity<List<Recipe>> getAll() {
-        return ResponseEntity.ok(recipeRepository.findAll());
+    public ResponseEntity<List<RecipeDTO>> getAll() {
+        return ResponseEntity.ok(
+                recipeRepository.findAll()
+                        .stream()
+                        .map(this::toDTO)
+                        .toList()
+        );
+    }
+
+    public static class RecipeDetailResponse {
+        public RecipeDTO recipe;
+        public double averageRating;
     }
 
     @GetMapping("/{id}")
@@ -50,10 +70,11 @@ public class RecipeController {
                 .average()
                 .orElse(0.0);
 
-        return ResponseEntity.ok(new Object() {
-            public final Recipe recipeData = recipe;
-            public final double averageRating = avgRating;
-        });
+        RecipeDetailResponse response = new RecipeDetailResponse();
+        response.recipe = toDTO(recipe);
+        response.averageRating = avgRating;
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping
@@ -100,13 +121,21 @@ public class RecipeController {
                     .body("User not found");
         }
 
-        return ResponseEntity.ok(recipeRepository.findByUser(user));
+        return ResponseEntity.ok(
+                recipeRepository.findByUser(user)
+                        .stream()
+                        .map(this::toDTO)
+                        .toList()
+        );
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<Recipe>> search(@RequestParam String name) {
+    public ResponseEntity<List<RecipeDTO>> search(@RequestParam String name) {
         return ResponseEntity.ok(
                 recipeRepository.findByNameContainingIgnoreCase(name)
+                        .stream()
+                        .map(this::toDTO)
+                        .toList()
         );
     }
 
@@ -120,16 +149,17 @@ public class RecipeController {
                     .body("Ingredient not found");
         }
 
-        List<Recipe> recipes = recipeRepository.findAll()
-                .stream()
-                .filter(r -> r.getRecipeIngredients()
+        return ResponseEntity.ok(
+                recipeRepository.findAll()
                         .stream()
-                        .anyMatch(ri -> ri.getIngredient()
-                                .getId()
-                                .equals(ingredientId)))
-                .toList();
-
-        return ResponseEntity.ok(recipes);
+                        .filter(r -> r.getRecipeIngredients()
+                                .stream()
+                                .anyMatch(ri -> ri.getIngredient()
+                                        .getId()
+                                        .equals(ingredientId)))
+                        .map(this::toDTO)
+                        .toList()
+        );
     }
 
     @DeleteMapping("/{id}")
@@ -152,32 +182,17 @@ public class RecipeController {
             @RequestParam(required = false) Integer maxTime
     ) {
 
-        List<Recipe> recipes = recipeRepository.findAll();
-
-        if (name != null && !name.isEmpty()) {
-            recipes = recipes.stream()
-                    .filter(r -> r.getName().toLowerCase()
-                            .contains(name.toLowerCase()))
-                    .toList();
-        }
-
-        if (ingredientId != null) {
-            recipes = recipes.stream()
-                    .filter(r -> r.getRecipeIngredients()
-                            .stream()
-                            .anyMatch(ri -> ri.getIngredient()
-                                    .getId()
-                                    .equals(ingredientId)))
-                    .toList();
-        }
-
-        if (maxTime != null) {
-            recipes = recipes.stream()
-                    .filter(r -> r.getPreparationTime() <= maxTime)
-                    .toList();
-        }
-
-        return ResponseEntity.ok(recipes);
+        return ResponseEntity.ok(
+                recipeRepository.findAll()
+                        .stream()
+                        .filter(r -> name == null || r.getName().toLowerCase().contains(name.toLowerCase()))
+                        .filter(r -> ingredientId == null ||
+                                r.getRecipeIngredients()
+                                        .stream()
+                                        .anyMatch(ri -> ri.getIngredient().getId().equals(ingredientId)))
+                        .filter(r -> maxTime == null || r.getPreparationTime() <= maxTime)
+                        .map(this::toDTO)
+                        .toList()
+        );
     }
-
 }

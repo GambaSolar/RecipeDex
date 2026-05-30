@@ -2,11 +2,11 @@ package es.solsaraguille.recipespring.controllers;
 
 import es.solsaraguille.recipespring.entities.Ingredient;
 import es.solsaraguille.recipespring.repositories.IngredientRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/ingredients")
@@ -25,22 +25,72 @@ public class IngredientController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody Ingredient ingredient) {
+    public ResponseEntity<Ingredient> create(@RequestBody Ingredient ingredient) {
 
         if (ingredient.getName() == null || ingredient.getName().trim().isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Ingredient name cannot be empty");
+            return ResponseEntity.badRequest().build();
         }
 
-        boolean exists = ingredientRepository.findAll()
+        String name = ingredient.getName().trim();
+
+        Optional<Ingredient> existing = ingredientRepository
+                .findAll()
                 .stream()
-                .anyMatch(i -> i.getName().equalsIgnoreCase(ingredient.getName()));
+                .filter(i -> i.getName().equalsIgnoreCase(name))
+                .findFirst();
 
-        if (exists) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("Ingredient already exists");
+        if (existing.isPresent()) {
+            return ResponseEntity.ok(existing.get());
         }
 
-        return ResponseEntity.ok(ingredientRepository.save(ingredient));
+        Ingredient newIng = new Ingredient();
+        newIng.setName(name);
+
+        return ResponseEntity.ok(ingredientRepository.save(newIng));
+    }
+
+    @PostMapping("/bulk")
+    public ResponseEntity<List<Ingredient>> bulkFindOrCreate(@RequestBody List<String> names) {
+
+        if (names == null || names.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<String> cleanNames = names.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(n -> !n.isEmpty())
+                .distinct()
+                .toList();
+
+        List<Ingredient> existing = ingredientRepository.findAll();
+
+        Map<String, Ingredient> map = existing.stream()
+                .collect(Collectors.toMap(
+                        i -> i.getName().toLowerCase(),
+                        i -> i,
+                        (a, b) -> a
+                ));
+
+        List<Ingredient> result = new ArrayList<>();
+
+        for (String name : cleanNames) {
+
+            String key = name.toLowerCase();
+
+            if (map.containsKey(key)) {
+                result.add(map.get(key));
+            } else {
+                Ingredient newIng = new Ingredient();
+                newIng.setName(name);
+
+                Ingredient saved = ingredientRepository.save(newIng);
+
+                map.put(key, saved);
+                result.add(saved);
+            }
+        }
+
+        return ResponseEntity.ok(result);
     }
 }
