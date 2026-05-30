@@ -1,0 +1,51 @@
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardReview"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="4dp"
+    app:cardBackgroundColor="@color/surface">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:orientation="vertical">
+
+        <!-- USERNAME -->
+        <TextView
+            android:id="@+id/tvUsername"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="usuario"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:textColor="@color/primary" />
+
+        <!-- RATING -->
+        <TextView
+            android:id="@+id/tvRating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⭐ 5"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:textColor="@color/secondary"
+            android:layout_marginTop="4dp"/>
+
+        <!-- COMMENT -->
+        <TextView
+            android:id="@+id/tvComment"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Comentario de ejemplo"
+            android:textSize="16sp"
+            android:textColor="@color/text_primary"
+            android:layout_marginTop="6dp"/>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
